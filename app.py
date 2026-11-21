@@ -2,8 +2,8 @@ from pathlib import Path
 import traceback
 import uvicorn
 
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -14,6 +14,19 @@ app = FastAPI(
     description="Create a personalized travel plan.",
     version="1.0.0",
 )
+
+frontend_dist = Path(__file__).parent / "frontend" / "dist"
+frontend_index = frontend_dist / "index.html"
+if frontend_index.is_file():
+    app.mount(
+        "/assets",
+        StaticFiles(directory=frontend_dist / "assets"),
+        name="frontend-assets",
+    )
+
+    @app.get("/", response_class=HTMLResponse)
+    async def serve_frontend() -> FileResponse:
+        return FileResponse(frontend_index)
 
 
 class PlanRequest(BaseModel):
@@ -38,8 +51,7 @@ async def create_plan(request: PlanRequest) -> dict:
                 "answer": result["answer"],
                 "flight_results": result["flight_results"],
                 "hotel_results": result["hotel_results"],
-                "itinerary": result["itinerary"],
-                "llm_calls": result["llm_calls"],
+                "itinerary": result["itinerary"]
             }
     )
 @app.get("/health")
