@@ -44,7 +44,7 @@ llm = ChatGroq(api_key=GROQ_API_KEY, model="openai/gpt-oss-120b", temperature=0.
 # graph state management
 
 class TravelState(TypedDict):
-    messages : Annotated[list[AnyMessage],operator.add] # used for storing messages in the state graph
+    messages : Annotated[list[AnyMessage],add_messages] # used for storing messages in the state graph
     user_query: str
     flight_results: str
     hotel_results: str
@@ -72,7 +72,7 @@ def flight_agent(state: TravelState) -> TravelState:
     return {
         "flight_results": flight_results,
         "messages": [AIMessage(content=f"Flight search results fetched:\n{flight_results}")],
-        "llm_call": state.get("llm_call", 0) + 1
+        # "llm_call": state.get("llm_call", 0) + 1
     }
 
 def hotel_agent(state: TravelState) -> TravelState:
@@ -91,7 +91,7 @@ def hotel_agent(state: TravelState) -> TravelState:
     return {
         "hotel_results": hotel_results,
         "messages": [AIMessage(content=f"Hotel search results fetched:\n{hotel_results}")],
-        "llm_call": state.get("llm_call", 0) + 1
+        # "llm_call": state.get("llm_call", 0) + 1
     }
 
 def itinerary_agent(state: TravelState) -> TravelState:
@@ -154,8 +154,9 @@ graph.add_node("itinerary_agent", itinerary_agent)
 graph.add_node("final_agent", final_agent)
 
 graph.add_edge(START, "flight_agent")
-graph.add_edge("flight_agent", "hotel_agent")
-graph.add_edge("hotel_agent", "itinerary_agent")
+graph.add_edge(START, "hotel_agent")
+graph.add_edge(["flight_agent","hotel_agent"],"itinerary_agent")
+# graph.add_edge("hotel_agent", "itinerary_agent")
 graph.add_edge("itinerary_agent", "final_agent")    
 graph.add_edge("final_agent", END)
 
